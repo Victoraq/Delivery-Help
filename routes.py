@@ -26,7 +26,7 @@ def helpboard():
 
     long_needy = []
     lat_needy = []
-    for num in range(len(list_needy)-1):
+    for num in range(len(list_needy)):
         long_needy.append(User.query.filter_by(id=list_needy[num]).longitude) 
         lat_needy.append(User.query.filter_by(id=list_needy[num]).latitude)
 
@@ -36,7 +36,7 @@ def helpboard():
     for num in range(len(long_needy)):
         distance.append(calculateDistance(long_needy[num],lat_needy[num],long_volunteer,lat_volunteer))
     dic = {}
-    for num in range(len(list_needy)-1):
+    for num in range(len(list_needy)):
         dic[list_needy[num]] = distance[num]
     order = sorted(dic.items(), key=itemgetter(1))
     result = []
