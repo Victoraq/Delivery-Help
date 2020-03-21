@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from project import db
 from models import User, HelpRequest
 from datetime import datetime
+import json
 import numpy as np
 
 routes = Blueprint('routes', __name__)
@@ -71,21 +72,21 @@ def new_help():
 
     # test if current user is a needy
     if not current_user.Needy:
-        return {'message': 'Bad Request'}
+        return json.dumps({'message': 'Bad Request'})
 
     # fill the information of the new help 
 
     data['date'] = datetime.strptime(data['date'], '%d/%m/%Y %H:%M:%S')
 
     new_help = HelpRequest(
-        id_volunteer=None, id_needy=current_user.id, date= data['date'], description=data['description']
+        id_volunteer=None, id_needy=current_user.id, date=data['date'], description=data['description']
         )
 
     # save the help in the database
     db.session.add(new_help)
     db.session.commit()
 
-    return {'help_id': new_help.id}
+    return json.dumps({'help_id': new_help.id})
 
 @login_required
 @routes.route('/accept_demand', methods=['POST'])
@@ -103,7 +104,7 @@ def accept_help_demand():
     help.id_volunteer = data['volunteer_id']
     db.session.commit()
 
-    return {'help_id': help.id}
+    return json.dumps({'help_id': help.id})
 
 @login_required
 @routes.route('/accept_volunteer', methods=['POST'])
@@ -118,7 +119,7 @@ def accept_volunteer():
 
     # assert if the volunteer column is not null
     if help.volunteer_id is None:
-        return {'message': 'Bad Request'}
+        return json.dumps({'message': 'Bad Request'})
 
     # remove the help demand from the list
     help.status = 3
@@ -141,4 +142,4 @@ def accept_volunteer():
         }
     }
 
-    return contact_dict
+    return json.dumps(contact_dict)

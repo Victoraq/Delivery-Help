@@ -10,7 +10,7 @@ class User(db.Model):
     name = db.Column(db.Text)
     telephone = db.Column(db.String(20), unique = True)
     email = db.Column(db.String(30), unique = True)
-    password = db.Column(db.String(20))
+    password = db.Column(db.String(255))
     volunteer = db.Column(db.Boolean)
     needy = db.Column(db.Boolean)
     longitude = db.Column(db.FLOAT(15,10)) #longitude coordenates
@@ -27,6 +27,13 @@ class User(db.Model):
         self.latitude = clean(latitude)
         self.volunteer = role == 'Volunteer'
         self.needy = role == 'Needy'
+
+    def is_active(self):
+        """True, as all users are active."""
+        return True
+
+    def get_id(self):
+        return self.id
 
     @staticmethod
     def addUser(name,telephone,email,password,longitude,latitude,role):
