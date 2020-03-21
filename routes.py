@@ -1,10 +1,12 @@
 from flask import Blueprint, request
 from flask_login import login_required, current_user
-from project import db, login_manager
+from project import db
 from models import User, HelpRequest
 from datetime import datetime
 import json
 import numpy as np
+import math
+from operator import itemgetter
 
 routes = Blueprint('routes', __name__)
 
@@ -22,30 +24,29 @@ def helpboard():
     # calculates the distance from the person to the demands
     # order the list by the distance
     # return the demand list
-    data = request.get_json()
-    list_needy = HelpRequest.query.id_needy
+    list_help = HelpRequest.query.all()
 
     long_needy = []
     lat_needy = []
-    for num in range(len(list_needy)):
-        long_needy.append(User.query.filter_by(id=list_needy[num]).longitude)
-        lat_needy.append(User.query.filter_by(id=list_needy[num]).latitude)
+    for help in list_help:
+        long_needy.append(User.query.filter_by(id=help.id_needy).first().longitude)
+        lat_needy.append(User.query.filter_by(id=help.id_needy).first().latitude)
 
-    long_volunteer, lat_volunteer = User.coordenatesById(data.id_volunteer)
+    long_volunteer, lat_volunteer = User.coordenatesById(current_user.id)
 
     distance = []
     for num in range(len(long_needy)):
         distance.append(calculateDistance(long_needy[num],lat_needy[num],long_volunteer,lat_volunteer))
     dic = {}
-    for num in range(len(list_needy)):
-        dic[list_needy[num]] = distance[num]
+    for num in range(len(list_help)):
+        dic[list_help[num]] = distance[num]
     order = sorted(dic.items(), key=itemgetter(1))
     result = []
-    for num in range(len(order)-1):
-        description = HelpRequest.descriptionByNeedy(order[0][num])
-        result.append({'id_needy':order[0][num], 'distance':order[1][num], 'description':description})
+    for num in range(len(order)):
+        description = HelpRequest.descriptionByNeedy(order[num][0].id_needy)
+        result.append({'id_needy':order[num][0].id_needy, 'distance':order[num][1], 'description':description})
 
-    return result
+    return json.dumps(result)
 
 
 def calculateDistance(long1,lat1,long2,lat2):
