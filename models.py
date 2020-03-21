@@ -85,90 +85,24 @@ class HelpRequest(db.Model):
 
     #__table_args__ = (UniqueConstraint('id_needy', name='unic_request'),)
 
-    def __init__(self, id_aluno, id_bolsa, data, anexo):
+    def __init__(self, id_needy, date, description):
         """Constructor."""
-        self.id_aluno = id_aluno
-        self.id_bolsa = id_bolsa
-        self.data = data
-        self.anexo = anexo
+        self.id_needy = id_needy
+        self.date = date
+        self.description = description
 
-        aluno = Usuario.query.filter_by(id=id_aluno).first()
-        bolsa = Bolsa.query.filter_by(id=id_bolsa).first()
-        prof = Usuario.query.filter_by(id=bolsa.prof_id).first()
+        needy = User.query.filter_by(role='Needy').first()
 
-        # Enviando email para professor com dados da inscrição
-        self.emailDadosInscricao(aluno,bolsa)
+        # # Enviando email para professor com dados da inscrição
+        # self.emailDadosInscricao(aluno,bolsa)
 
-    def emailDadosInscricao(self, aluno, bolsa, prof):
-        """Envia email com dados de inscrição para professor"""
-        port = 465  # For SSL
-        password = 'bolsas@123'
+    
+    def researchRequest(research=''):
+        """ Return every help request """
 
-        sender_email = "bolsasufjf@gmail.com"
-        receiver_email = prof.email
-        subject = f"Candidatura da bolsa mamofaf"
-        body = f"""\
-        Aluno: {aluno.nome} {aluno.sobrenome}
-        
-        Matricula: {aluno.matricula}
-        Curso: {aluno.curso}
-        E-mail: {aluno.email}
-        """
+        if research == '':
+            request = helpRequest.query.filter_by(helpRequest.id).all()
 
-        # Create a multipart message and set headers
-        message = MIMEMultipart()
-        message["From"] = sender_email
-        message["To"] = receiver_email
-        message["Subject"] = subject
+        return request
 
-        # Add body to email
-        message.attach(MIMEText(body, "plain"))
-
-        filename = self.anexo
-
-        # Open PDF file in binary mode
-        with open(filename, "rb") as attachment:
-            # Add file as application/octet-stream
-            # Email client can usually download this automatically as attachment
-            part = MIMEBase("application", "octet-stream")
-            part.set_payload(attachment.read())
-        
-        # Encode file in ASCII characters to send by email    
-        encoders.encode_base64(part)
-
-        # Add header as key/value pair to attachment part
-        part.add_header(
-            "Content-Disposition",
-            f"attachment; filename=curriculo.pdf",
-        )
-
-        # Add attachment to message and convert message to string
-        message.attach(part)
-        text = message.as_string()
-
-        # Log in to server using secure context and send email
-        context = ssl.create_default_context()
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
-            server.login(sender_email, password)
-            server.sendmail(sender_email, receiver_email, text)
-
-    def buscarInscricoes(busca=''):
-        """ Retorna todas as inscricoes relacionadas a busca """
-
-        if busca == '':
-            inscricoes = InscricaoBolsa.query.filter_by(InscricaoBolsa.id_bolsa).all()
-
-        return inscricoes
-
-    def buscaInscricaoAluno(aluno_id):
-
-        inscricao = InscricaoBolsa.query.filter_by(id_aluno=aluno_id).all()
-
-        return inscricao
-
-    def buscaNome(inscricoes):
-        bolsa = []
-        for inscricao in inscricoes:
-            bolsa.append(Bolsas.getBolsas(inscricoes.id_bolsa))
-
-        return bolsa
+    
