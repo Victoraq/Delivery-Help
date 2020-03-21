@@ -62,6 +62,9 @@ class User(UserMixin, db.Model):
         user = User.query.filter_by(email=email).first()
 
         return user
+    def coordenatesById(id_user):
+        coordenates = (User.query.filter_by(id=id_user).longitude, User.query.filter_by(id=id_user).latitude)
+        return coordenates
     
 class HelpRequest(db.Model):
     """ Class specif for help request """
@@ -79,6 +82,9 @@ class HelpRequest(db.Model):
         self.date = date
         self.description = description
         self.status = 0
+    def descriptionByNeedy(id_needy):
+        answer = HelpRequest.query.filter_by(id_needy=id_needy).description
+        return answer
 
     def addHelpRequest(self, id_needy, date, description):
         new_help = HelpRequest(id_needy, date, description)

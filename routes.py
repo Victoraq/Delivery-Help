@@ -4,6 +4,7 @@ from project import db, login_manager
 from models import User, HelpRequest
 from datetime import datetime
 import json
+import numpy as np
 
 routes = Blueprint('routes', __name__)
 
@@ -21,7 +22,46 @@ def helpboard():
     # calculates the distance from the person to the demands
     # order the list by the distance
     # return the demand list
-    return json.dumps([])
+    data = request.get_json()
+    list_needy = HelpRequest.query.id_needy
+
+    long_needy = []
+    lat_needy = []
+    for num in range(len(list_needy)):
+        long_needy.append(User.query.filter_by(id=list_needy[num]).longitude)
+        lat_needy.append(User.query.filter_by(id=list_needy[num]).latitude)
+
+    long_volunteer, lat_volunteer = User.coordenatesById(data.id_volunteer)
+
+    distance = []
+    for num in range(len(long_needy)):
+        distance.append(calculateDistance(long_needy[num],lat_needy[num],long_volunteer,lat_volunteer))
+    dic = {}
+    for num in range(len(list_needy)):
+        dic[list_needy[num]] = distance[num]
+    order = sorted(dic.items(), key=itemgetter(1))
+    result = []
+    for num in range(len(order)-1):
+        description = HelpRequest.descriptionByNeedy(order[0][num])
+        result.append({'id_needy':order[0][num], 'distance':order[1][num], 'description':description})
+
+    return result
+
+
+def calculateDistance(long1,lat1,long2,lat2):
+    R = 6373.0
+    lat1 = math.radians(lat1)
+    long1 = math.radians(long1)
+    lat2 = math.radians(lat2)
+    long2 = math.radians(long2)
+
+    dlon = long2 - long1
+    dlat = lat2 - lat1
+
+    a = math.sin(dlat / 2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    distance = R * c
+    return distance
 
 @login_required
 @routes.route('/new_help', methods=['POST'])
@@ -37,7 +77,7 @@ def new_help():
     if not current_user.needy:
         return json.dumps({'message': 'Bad Request'})
 
-    # fill the information of the new help 
+    # fill the information of the new help
 
     data['date'] = datetime.strptime(data['date'], '%d/%m/%Y %H:%M:%S')
 
@@ -116,7 +156,5 @@ def accept_volunteer():
             'longitude': str(needy.longitude)
         }
     }
-
-    print(contact_dict)
 
     return json.dumps(contact_dict)
