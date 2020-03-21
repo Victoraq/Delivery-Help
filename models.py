@@ -2,13 +2,6 @@ from project import db
 from bleach import clean
 from flask_sqlalchemy import SQLAlchemy
 
-
-import email, smtplib, ssl
-from email import encoders
-from email.mime.base import MIMEBase
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-
 class User(db.Model):
   
     "Control class of application user"
@@ -43,22 +36,21 @@ class User(db.Model):
         """Return the email address to satisfy Flask-Login's requirements."""
         return self.email
 
-    def addUser(self, name,tel,email,password,role):
+    def addUser(self,name,telephone,email,password,longitude,latitude,role):
         
-        user = User(name,tel,email,password,role)
+        user = User(name,telephone,email,password,longitude,latitude,role)
         
         db.session.add(user)
         db.session.commit()
 
         return user
 
-    def researchNeedy(self, busca=''):
+    def researchNeedy(self,):
         """ Return every needy person """
 
-        if research == '':
-            needy = User.query.filter_by(needy=True).all()
+        needy = User.query.filter_by(needy=True).all()
 
-            return needy
+        return needy
     
     def userId(self, id_user):
         """ Return information about the user by the id """
@@ -78,31 +70,23 @@ class HelpRequest(db.Model):
     """ Class specif for help request """
 
     id = db.Column(db.Integer, primary_key = True)
-    id_volunteer = db.Column(db.Integer, ForeignKey("user.id"))
-    id_needy = db.Column(db.Integer, ForeignKey("user.id"), nullable=False)
+    id_volunteer = db.Column(db.Integer, db.ForeignKey("user.id"))
+    id_needy = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     date = db.Column(db.DateTime)
     description = db.Column(db.Text) #audio or text
-
-    #__table_args__ = (UniqueConstraint('id_needy', name='unic_request'),)
+    status = db.Column(db.Integer)
 
     def __init__(self, id_needy, date, description):
         """Constructor."""
         self.id_needy = id_needy
         self.date = date
         self.description = description
+        self.status = 0
 
-        needy = User.query.filter_by(role='Needy').first()
+    def addHelpRequest(self, id_needy, date, description):
+        new_help = HelpRequest(id_needy, date, description)
+        
+        db.session.add(new_help)
+        db.session.commit()
 
-        # # Enviando email para professor com dados da inscrição
-        # self.emailDadosInscricao(aluno,bolsa)
-
-    
-    def researchRequest(research=''):
-        """ Return every help request """
-
-        if research == '':
-            request = helpRequest.query.filter_by(helpRequest.id).all()
-
-        return request
-
-    
+        return new_help

@@ -1,5 +1,8 @@
 from flask import Blueprint, request
 from flask_login import login_required, current_user
+from project import db
+from models import User, HelpRequest
+from datetime import datetime
 
 routes = Blueprint('routes', __name__)
 
@@ -27,13 +30,23 @@ def new_help():
     """
     data = request.get_json()
 
-    # test if current user is a need
-    # get the user data from the database
-    # fill the information of the new help 
-    # send to the database
-    # return the id of the new help
+    # test if current user is a needy
+    if not current_user.Needy:
+        return {'message': 'Bad Request'}
 
-    return NotImplemented
+    # fill the information of the new help 
+
+    data['date'] = datetime.strptime(data['date'], '%d/%m/%Y %H:%M:%S')
+
+    new_help = HelpRequest(
+        id_volunteer=None, id_needy=current_user.id, date= data['date'], description=data['description']
+        )
+
+    # save the help in the database
+    db.session.add(new_help)
+    db.session.commit()
+
+    return {'help_id': new_help.id}
 
 @login_required
 @routes.route('/accept_demand', methods=['POST'])
@@ -41,16 +54,17 @@ def accept_help_demand():
     """
         Receive the volunteer acceptance of a help
     """
-
     data = request.get_json()
 
-    help_id = data['help_id']
-    volunteer_id = data['volunteer_id']
-
     # find the help demand in the database
-    # fill the volunteer column with the volunteer id
 
-    return NotImplemented
+    help = HelpRequest.query.filter_by(id=data['help_id'])
+
+    # fill the volunteer column with the volunteer id
+    help.id_volunteer = data['volunteer_id']
+    db.session.commit()
+
+    return {'help_id': help.id}
 
 @login_required
 @routes.route('/accept_volunteer', methods=['POST'])
@@ -58,13 +72,34 @@ def accept_volunteer():
     """
         Receive the help offered by a volunteer and returns the help needed data
     """
-
     data = request.get_json()
 
-    help_id = data['help_id']
+    # find the help demand in the database
+    help = HelpRequest.query.filter_by(id=data['help_id'])
 
     # assert if the volunteer column is not null
-    # remove the help demand from the list
-    # return the contact info from the needed
+    if help.volunteer_id is None:
+        return {'message': 'Bad Request'}
 
-    return NotImplemented
+    # remove the help demand from the list
+    help.status = 3
+    db.session.commit()
+
+    # return the contact info from the needy and volunteer
+    volunteer = User.filter_by(id=help.id_volunteer)
+    needy = User.filter_by(id=help.id_needy)
+
+    contact_dict = {
+        'volunteer': {
+            'telephone': volunteer.telephone,
+            'latitude': volunteer.latitude,
+            'longitude': volunteer.longitude
+        },
+        'needy': {
+            'telephone': needy.telephone,
+            'latitude': needy.latitude,
+            'longitude': needy.longitude
+        }
+    }
+
+    return contact_dict

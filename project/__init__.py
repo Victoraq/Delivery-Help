@@ -2,8 +2,6 @@ from flask import Flask
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
-from routes import routes
-from auth import auth
 
 app = Flask(__name__)
 
@@ -13,9 +11,15 @@ app.config.from_pyfile('app.cfg')
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 
+login_manager = LoginManager()
+login_manager.init_app(app)
+
 # Routes blueprints
+from routes import routes
+from auth import auth
 app.register_blueprint(routes)
 app.register_blueprint(auth)
 
-login_manager = LoginManager()
-login_manager.init_app(app)
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    db.session.remove()
