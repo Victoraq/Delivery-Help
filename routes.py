@@ -1,6 +1,6 @@
 from flask import Blueprint, request
 from flask_login import login_required, current_user
-from project import db
+from project import db, login_manager
 from models import User, HelpRequest
 from datetime import datetime
 import json
@@ -11,6 +11,7 @@ routes = Blueprint('routes', __name__)
 def index():
     return "Welcome to the Delivery Help!"
 
+@login_required
 @routes.route('/helpboard', methods=['GET'])
 def helpboard():
     """
@@ -22,7 +23,6 @@ def helpboard():
     # return the demand list
     return json.dumps([])
 
-
 @login_required
 @routes.route('/new_help', methods=['POST'])
 def new_help():
@@ -31,8 +31,10 @@ def new_help():
     """
     data = request.get_json()
 
+    print(current_user.is_authenticated)
+
     # test if current user is a needy
-    if not current_user.Needy:
+    if not current_user.needy:
         return json.dumps({'message': 'Bad Request'})
 
     # fill the information of the new help 
@@ -40,7 +42,7 @@ def new_help():
     data['date'] = datetime.strptime(data['date'], '%d/%m/%Y %H:%M:%S')
 
     new_help = HelpRequest(
-        id_volunteer=None, id_needy=current_user.id, date=data['date'], description=data['description']
+        id_needy=current_user.id, date=data['date'], description=data['description']
         )
 
     # save the help in the database
@@ -58,11 +60,15 @@ def accept_help_demand():
     data = request.get_json()
 
     # find the help demand in the database
+    help = HelpRequest.query.filter_by(id=int(data['help_id'])).first()
 
-    help = HelpRequest.query.filter_by(id=data['help_id'])
+    # verify if is a volunteer
+    if not current_user.volunteer:
+        return {'message': 'Bad Request'}
 
     # fill the volunteer column with the volunteer id
-    help.id_volunteer = data['volunteer_id']
+    help.id_volunteer = current_user.id
+    help.status = 1
     db.session.commit()
 
     return json.dumps({'help_id': help.id})
@@ -76,10 +82,18 @@ def accept_volunteer():
     data = request.get_json()
 
     # find the help demand in the database
-    help = HelpRequest.query.filter_by(id=data['help_id'])
+    help = HelpRequest.query.filter_by(id=int(data['help_id'])).first()
+
+    # assert if is a needy
+    if not current_user.needy:
+        return json.dumps({'message': 'Not a needy user'})
+
+    # assert if is the help owner
+    if current_user.id != help.id_needy:
+        return json.dumps({'message': 'Not the owner'})
 
     # assert if the volunteer column is not null
-    if help.volunteer_id is None:
+    if help.id_volunteer is None:
         return json.dumps({'message': 'Bad Request'})
 
     # remove the help demand from the list
@@ -87,20 +101,22 @@ def accept_volunteer():
     db.session.commit()
 
     # return the contact info from the needy and volunteer
-    volunteer = User.filter_by(id=help.id_volunteer)
-    needy = User.filter_by(id=help.id_needy)
+    volunteer = User.query.filter_by(id=help.id_volunteer).first()
+    needy = User.query.filter_by(id=help.id_needy).first()
 
     contact_dict = {
         'volunteer': {
             'telephone': volunteer.telephone,
-            'latitude': volunteer.latitude,
-            'longitude': volunteer.longitude
+            'latitude': str(volunteer.latitude),
+            'longitude': str(volunteer.longitude)
         },
         'needy': {
             'telephone': needy.telephone,
-            'latitude': needy.latitude,
-            'longitude': needy.longitude
+            'latitude': str(needy.latitude),
+            'longitude': str(needy.longitude)
         }
     }
+
+    print(contact_dict)
 
     return json.dumps(contact_dict)

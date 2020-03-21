@@ -1,8 +1,9 @@
 from project import db
 from bleach import clean
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import UserMixin
 
-class User(db.Model):
+class User(UserMixin, db.Model):
   
     "Control class of application user"
     
@@ -27,13 +28,6 @@ class User(db.Model):
         self.latitude = clean(latitude)
         self.volunteer = role == 'Volunteer'
         self.needy = role == 'Needy'
-
-    def is_active(self):
-        """True, as all users are active."""
-        return True
-
-    def get_id(self):
-        return self.id
 
     @staticmethod
     def addUser(name,telephone,email,password,longitude,latitude,role):

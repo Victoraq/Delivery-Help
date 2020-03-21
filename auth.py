@@ -61,3 +61,9 @@ def signup():
     }
 
     return json.dumps(signup_data)
+
+@auth.route('/logout', methods=['GET'])
+@login_required
+def logout():
+    logout_user()
+    return json.dumps({'success': '200'}), 200, {'ContentType':'application/json'}
