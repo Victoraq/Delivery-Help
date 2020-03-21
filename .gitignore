@@ -133,3 +133,6 @@ dmypy.json
 
 # configuration file
 project/app.cfg
+
+# requests REST
+requests/

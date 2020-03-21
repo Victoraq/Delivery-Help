@@ -8,8 +8,8 @@ class User(db.Model):
     
     id = db.Column(db.Integer, primary_key = True)
     name = db.Column(db.Text)
-    telephone = db.Column(db.Text, unique = True)
-    email = db.Column(db.Text, unique = True)
+    telephone = db.Column(db.String(20), unique = True)
+    email = db.Column(db.String(30), unique = True)
     password = db.Column(db.String(20))
     volunteer = db.Column(db.Boolean)
     needy = db.Column(db.Boolean)
@@ -28,15 +28,8 @@ class User(db.Model):
         self.volunteer = role == 'Volunteer'
         self.needy = role == 'Needy'
 
-    def is_active(self):
-        """True, as all users are active."""
-        return True
-
-    def get_email(self):
-        """Return the email address to satisfy Flask-Login's requirements."""
-        return self.email
-
-    def addUser(self,name,telephone,email,password,longitude,latitude,role):
+    @staticmethod
+    def addUser(name,telephone,email,password,longitude,latitude,role):
         
         user = User(name,telephone,email,password,longitude,latitude,role)
         
@@ -45,21 +38,24 @@ class User(db.Model):
 
         return user
 
-    def researchNeedy(self,):
+    @staticmethod
+    def researchNeedy():
         """ Return every needy person """
 
         needy = User.query.filter_by(needy=True).all()
 
         return needy
     
-    def userId(self, id_user):
+    @staticmethod
+    def userId(id_user):
         """ Return information about the user by the id """
 
         information = User.query.filter_by(id=id_user).first()
 
         return information
 
-    def getUserByEmail(self, email):
+    @staticmethod
+    def getUserByEmail(email):
         """ Return user by email """
         
         user = User.query.filter_by(email=email).first()
