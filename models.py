@@ -23,10 +23,10 @@ class User(db.Model):
     longitude = db.Column(db.FLOAT(15,10)) #longitude coordenates
     latitude = db.Column(db.FLOAT(15,10)) #latitude coordenate
 
-    def __init__(self,name,telephone,email,password,volunteer,needy,longitude,latitude,role):
+    def __init__(self,name,telephone,email,password,longitude,latitude,role):
         """Constructor"""
 
-        self.nome = clean(nome)
+        self.name = clean(name)
         self.telephone = clean(telephone)
         self.email = clean(email)
         self.password = clean(password)
@@ -39,15 +39,11 @@ class User(db.Model):
         """True, as all users are active."""
         return True
 
-    def get_id(self):
+    def get_email(self):
         """Return the email address to satisfy Flask-Login's requirements."""
         return self.email
 
-    # def is_anonymous(self):
-    #     """False, as anonymous users aren't supported."""
-    #     return Falsed
-
-    def addUser(name,tel,email,password,role):
+    def addUser(self, name,tel,email,password,role):
         
         user = User(name,tel,email,password,role)
         
@@ -55,7 +51,8 @@ class User(db.Model):
         db.session.commit()
 
         return user
-    def researchNeedy(busca=''):
+
+    def researchNeedy(self, busca=''):
         """ Return every needy person """
 
         if research == '':
@@ -63,20 +60,27 @@ class User(db.Model):
 
             return needy
     
-    def userId(id_user):
+    def userId(self, id_user):
         """ Return information about the user by the id """
 
         information = User.query.filter_by(id=id_user).first()
 
         return information
+
+    def getUserByEmail(self, email):
+        """ Return user by email """
+        
+        user = User.query.filter_by(email=email).first()
+
+        return user
     
-class helpRequest(db.Model):
+class HelpRequest(db.Model):
     """ Class specif for help request """
 
     id = db.Column(db.Integer, primary_key = True)
     id_volunteer = db.Column(db.Integer, ForeignKey("user.id"))
     id_needy = db.Column(db.Integer, ForeignKey("user.id"), nullable=False)
-    data = db.Column(db.DateTime)
+    date = db.Column(db.DateTime)
     description = db.Column(db.Text) #audio or text
 
     #__table_args__ = (UniqueConstraint('id_needy', name='unic_request'),)
