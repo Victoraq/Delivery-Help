@@ -24,29 +24,53 @@ def helpboard():
     # calculates the distance from the person to the demands
     # order the list by the distance
     # return the demand list
-    list_help = HelpRequest.query.all()
 
-    long_needy = []
-    lat_needy = []
-    for help in list_help:
-        long_needy.append(User.query.filter_by(id=help.id_needy).first().longitude)
-        lat_needy.append(User.query.filter_by(id=help.id_needy).first().latitude)
+    if current_user.volunteer:
+        list_help = HelpRequest.query.all()
 
-    long_volunteer, lat_volunteer = User.coordenatesById(current_user.id)
+        long_needy = []
+        lat_needy = []
+        for help in list_help:
+            long_needy.append(User.query.filter_by(id=help.id_needy).first().longitude)
+            lat_needy.append(User.query.filter_by(id=help.id_needy).first().latitude)
 
-    distance = []
-    for num in range(len(long_needy)):
-        distance.append(calculateDistance(long_needy[num],lat_needy[num],long_volunteer,lat_volunteer))
-    dic = {}
-    for num in range(len(list_help)):
-        dic[list_help[num]] = distance[num]
-    order = sorted(dic.items(), key=itemgetter(1))
-    result = []
-    for num in range(len(order)):
-        description = HelpRequest.descriptionByNeedy(order[num][0].id_needy)
-        result.append({'id_needy':order[num][0].id_needy, 'distance':order[num][1], 'description':description})
+        long_volunteer, lat_volunteer = User.coordenatesById(current_user.id)
 
-    return json.dumps(result)
+        distance = []
+        for num in range(len(long_needy)):
+            distance.append(calculateDistance(long_needy[num],lat_needy[num],long_volunteer,lat_volunteer))
+        dic = {}
+        for num in range(len(list_help)):
+            dic[list_help[num]] = distance[num]
+        order = sorted(dic.items(), key=itemgetter(1))
+        result = []
+        for num in range(len(order)):
+            if order[num][0].status != 2:
+                result.append(
+                    {
+                        'id_needy': order[num][0].id_needy, 
+                        'distance': order[num][1], 
+                        'description': order[num][0].description,
+                        'status': order[num][0].status
+                    }
+                )
+
+        return json.dumps(result)
+    
+    elif current_user.needy:
+        needy_requests = HelpRequest.query.filter_by(id_needy=current_user.id)
+
+        result = [
+            {
+                'id_needy': current_user.id,
+                'distance': 0.0,
+                'description': x.description,
+                'status': x.status
+            }
+            for x in needy_requests if int(x.status) != 2
+        ]
+
+        return json.dumps(result)
 
 
 def calculateDistance(long1,lat1,long2,lat2):
@@ -112,7 +136,7 @@ def accept_help_demand():
     help.status = 1
     db.session.commit()
 
-    return json.dumps({'help_id': help.id})
+    return json.dumps({'help_id': help.id, 'status': help.status})
 
 @login_required
 @routes.route('/accept_volunteer', methods=['POST'])
@@ -138,7 +162,7 @@ def accept_volunteer():
         return json.dumps({'message': 'Bad Request'})
 
     # remove the help demand from the list
-    help.status = 3
+    help.status = 2
     db.session.commit()
 
     # return the contact info from the needy and volunteer
