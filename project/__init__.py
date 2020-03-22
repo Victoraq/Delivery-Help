@@ -6,7 +6,15 @@ from flask_jwt_extended import JWTManager
 
 app = Flask(__name__)
 
-app.config.from_pyfile('app.cfg')
+try:
+    app.config.from_pyfile('app.cfg')
+except:
+    app.config.from_envvar('SQLALCHEMY_DATABASE_URI')
+    app.config.from_envvar('SQLALCHEMY_TRACK_MODIFICATIONS')
+    app.config.from_envvar('MAX_CONTENT_LENGTH')
+    app.config.from_envvar('JWT_SECRET_KEY')
+    app.config.from_envvar('SESSION_TYPE')
+    app.config.from_envvar('SECRET_KEY')
 
 # Configure the database
 db = SQLAlchemy(app)
